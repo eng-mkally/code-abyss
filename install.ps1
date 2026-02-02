@@ -90,15 +90,16 @@ function Backup-Existing {
     "" | Out-File -FilePath $ManifestFile -Encoding UTF8
 
     # 备份 CLAUDE.md
-    if (Test-Path "$ClaudeDir\CLAUDE.md") {
-        Copy-Item "$ClaudeDir\CLAUDE.md" "$BackupDir\CLAUDE.md"
+    $claudeMdPath = Join-Path $ClaudeDir "CLAUDE.md"
+    if (Test-Path $claudeMdPath) {
+        Copy-Item $claudeMdPath (Join-Path $BackupDir "CLAUDE.md")
         "CLAUDE.md" | Add-Content -Path $ManifestFile
         Write-Success "  备份 CLAUDE.md"
     }
 
     # 备份 settings.json
     if (Test-Path $SettingsFile) {
-        Copy-Item $SettingsFile "$BackupDir\settings.json"
+        Copy-Item $SettingsFile (Join-Path $BackupDir "settings.json")
         "settings.json" | Add-Content -Path $ManifestFile
         Write-Success "  备份 settings.json"
     }
@@ -118,9 +119,9 @@ function Backup-Existing {
     # 备份 skills 目录中受影响的文件
     if (Test-Path $SkillsDir) {
         # 备份 run_skill.py
-        if (Test-Path "$SkillsDir\run_skill.py") {
-            Copy-Item "$SkillsDir\run_skill.py" "$BackupDir\run_skill.py"
-            "skills\run_skill.py" | Add-Content -Path $ManifestFile
+        if (Test-Path (Join-Path $SkillsDir "run_skill.py")) {
+            Copy-Item (Join-Path $SkillsDir "run_skill.py") (Join-Path $BackupDir "run_skill.py")
+            "skills/run_skill.py" | Add-Content -Path $ManifestFile
             Write-Success "  备份 skills\run_skill.py"
         }
 
@@ -161,7 +162,8 @@ function Install-Config {
 
     # 下载 CLAUDE.md
     $configUrl = "$RepoUrl/config/CLAUDE.md"
-    Invoke-WebRequest -Uri $configUrl -OutFile "$ClaudeDir\CLAUDE.md" -UseBasicParsing
+    $claudeMdPath = Join-Path $ClaudeDir "CLAUDE.md"
+    Invoke-WebRequest -Uri $configUrl -OutFile $claudeMdPath -UseBasicParsing
     Write-Success "CLAUDE.md 已安装"
 }
 
@@ -255,7 +257,8 @@ function Install-Uninstaller {
     Write-Info "安装卸载脚本..."
 
     $uninstallUrl = "$RepoUrl/uninstall.ps1"
-    Invoke-WebRequest -Uri $uninstallUrl -OutFile "$ClaudeDir\.sage-uninstall.ps1" -UseBasicParsing
+    $uninstallPath = Join-Path $ClaudeDir ".sage-uninstall.ps1"
+    Invoke-WebRequest -Uri $uninstallUrl -OutFile $uninstallPath -UseBasicParsing
     Write-Success "卸载脚本已安装"
 }
 
@@ -265,7 +268,8 @@ function Test-Installation {
     $errors = 0
 
     # 检查 CLAUDE.md
-    if (-not (Test-Path "$ClaudeDir\CLAUDE.md")) {
+    $claudeMdPath = Join-Path $ClaudeDir "CLAUDE.md"
+    if (-not (Test-Path $claudeMdPath)) {
         Write-Error "CLAUDE.md 未找到"
         $errors++
     }

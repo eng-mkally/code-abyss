@@ -64,8 +64,9 @@ function Remove-InstalledFiles {
     Write-Info "移除已安装的文件..."
 
     # 移除 CLAUDE.md
-    if (Test-Path "$ClaudeDir\CLAUDE.md") {
-        Remove-Item -Force "$ClaudeDir\CLAUDE.md"
+    $claudeMdPath = Join-Path $ClaudeDir "CLAUDE.md"
+    if (Test-Path $claudeMdPath) {
+        Remove-Item -Force $claudeMdPath
         Write-Success "  移除 CLAUDE.md"
     }
 
@@ -118,15 +119,18 @@ function Restore-Backup {
     $restored = 0
 
     # 恢复 CLAUDE.md
-    if (Test-Path "$BackupDir\CLAUDE.md") {
-        Copy-Item "$BackupDir\CLAUDE.md" "$ClaudeDir\CLAUDE.md"
+    $backupClaudeMd = Join-Path $BackupDir "CLAUDE.md"
+    if (Test-Path $backupClaudeMd) {
+        $claudeMdPath = Join-Path $ClaudeDir "CLAUDE.md"
+        Copy-Item $backupClaudeMd $claudeMdPath
         Write-Success "  恢复 CLAUDE.md"
         $restored++
     }
 
     # 恢复 settings.json
-    if (Test-Path "$BackupDir\settings.json") {
-        Copy-Item "$BackupDir\settings.json" $SettingsFile
+    $backupSettings = Join-Path $BackupDir "settings.json"
+    if (Test-Path $backupSettings) {
+        Copy-Item $backupSettings $SettingsFile
         Write-Success "  恢复 settings.json"
         $restored++
     }
@@ -185,7 +189,7 @@ function Clear-Backup {
     }
 
     # 移除卸载脚本自身
-    $selfPath = "$ClaudeDir\.sage-uninstall.ps1"
+    $selfPath = Join-Path $ClaudeDir ".sage-uninstall.ps1"
     if (Test-Path $selfPath) {
         Remove-Item -Force $selfPath
         Write-Success "  卸载脚本已移除"
