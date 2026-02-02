@@ -242,7 +242,7 @@ function Install-Skills {
         Invoke-WebRequest -Uri $skillMdUrl -OutFile $skillMdPath -UseBasicParsing
 
         # 下载脚本
-        $scriptName = $ScriptNames[$skill]
+        $scriptName = $ScriptNames.Item($skill)
         $scriptUrl = "$RepoUrl/skills/$skill/scripts/$scriptName"
         $scriptPath = Join-Path $scriptsDir $scriptName
         Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
@@ -311,7 +311,7 @@ function Test-Installation {
     # 检查每个 skill
     $skillCount = 0
     foreach ($skill in $Skills) {
-        $scriptName = $ScriptNames[$skill]
+        $scriptName = $ScriptNames.Item($skill)
         $skillDir = Join-Path $SkillsDir $skill
         $skillMdPath = Join-Path $skillDir "SKILL.md"
         $scriptPath = Join-Path $skillDir "scripts/$scriptName"
