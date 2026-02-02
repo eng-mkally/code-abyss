@@ -70,9 +70,10 @@ function Remove-InstalledFiles {
     }
 
     # 移除输出风格文件
-    if (Test-Path "$OutputStylesDir\$OutputStyleName.md") {
-        Remove-Item -Force "$OutputStylesDir\$OutputStyleName.md"
-        Write-Success "  移除 output-styles\$OutputStyleName.md"
+    $styleFile = Join-Path $OutputStylesDir "$OutputStyleName.md"
+    if (Test-Path $styleFile) {
+        Remove-Item -Force $styleFile
+        Write-Success "  移除 output-styles/$OutputStyleName.md"
     }
 
     # 如果 output-styles 目录为空，删除它
@@ -82,23 +83,25 @@ function Remove-InstalledFiles {
     }
 
     # 移除 run_skill.py
-    if (Test-Path "$SkillsDir\run_skill.py") {
-        Remove-Item -Force "$SkillsDir\run_skill.py"
-        Write-Success "  移除 skills\run_skill.py"
+    $runSkillPath = Join-Path $SkillsDir "run_skill.py"
+    if (Test-Path $runSkillPath) {
+        Remove-Item -Force $runSkillPath
+        Write-Success "  移除 skills/run_skill.py"
     }
 
     # 移除每个 skill 目录
     foreach ($skill in $Skills) {
-        if (Test-Path "$SkillsDir\$skill") {
-            Remove-Item -Recurse -Force "$SkillsDir\$skill"
-            Write-Success "  移除 skills\$skill\"
+        $skillPath = Join-Path $SkillsDir $skill
+        if (Test-Path $skillPath) {
+            Remove-Item -Recurse -Force $skillPath
+            Write-Success "  移除 skills/$skill/"
         }
     }
 
     # 如果 skills 目录为空，删除它
     if ((Test-Path $SkillsDir) -and ((Get-ChildItem $SkillsDir -ErrorAction SilentlyContinue | Measure-Object).Count -eq 0)) {
         Remove-Item -Force $SkillsDir
-        Write-Success "  移除空的 skills\ 目录"
+        Write-Success "  移除空的 skills/ 目录"
     }
 
     Write-Success "已安装文件移除完成"
@@ -129,33 +132,38 @@ function Restore-Backup {
     }
 
     # 恢复输出风格文件
-    if (Test-Path "$BackupDir\output-styles\$OutputStyleName.md") {
+    $backupStyleFile = Join-Path $BackupDir "output-styles/$OutputStyleName.md"
+    if (Test-Path $backupStyleFile) {
         if (-not (Test-Path $OutputStylesDir)) {
             New-Item -ItemType Directory -Path $OutputStylesDir -Force | Out-Null
         }
-        Copy-Item "$BackupDir\output-styles\$OutputStyleName.md" $OutputStylesDir
-        Write-Success "  恢复 output-styles\$OutputStyleName.md"
+        Copy-Item $backupStyleFile $OutputStylesDir
+        Write-Success "  恢复 output-styles/$OutputStyleName.md"
         $restored++
     }
 
     # 恢复 run_skill.py
-    if (Test-Path "$BackupDir\run_skill.py") {
+    $backupRunSkill = Join-Path $BackupDir "run_skill.py"
+    if (Test-Path $backupRunSkill) {
         if (-not (Test-Path $SkillsDir)) {
             New-Item -ItemType Directory -Path $SkillsDir -Force | Out-Null
         }
-        Copy-Item "$BackupDir\run_skill.py" "$SkillsDir\run_skill.py"
-        Write-Success "  恢复 skills\run_skill.py"
+        $runSkillPath = Join-Path $SkillsDir "run_skill.py"
+        Copy-Item $backupRunSkill $runSkillPath
+        Write-Success "  恢复 skills/run_skill.py"
         $restored++
     }
 
     # 恢复每个 skill 目录
     foreach ($skill in $Skills) {
-        if (Test-Path "$BackupDir\skills\$skill") {
-            if (-not (Test-Path "$SkillsDir\$skill")) {
-                New-Item -ItemType Directory -Path "$SkillsDir\$skill" -Force | Out-Null
+        $backupSkillDir = Join-Path $BackupDir "skills/$skill"
+        if (Test-Path $backupSkillDir) {
+            $skillDir = Join-Path $SkillsDir $skill
+            if (-not (Test-Path $skillDir)) {
+                New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
             }
-            Copy-Item -Recurse "$BackupDir\skills\$skill\*" "$SkillsDir\$skill\" -Force
-            Write-Success "  恢复 skills\$skill\"
+            Copy-Item -Recurse "$backupSkillDir/*" $skillDir -Force
+            Write-Success "  恢复 skills/$skill/"
             $restored++
         }
     }

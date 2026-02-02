@@ -104,14 +104,15 @@ function Backup-Existing {
     }
 
     # 备份输出风格文件
-    if (Test-Path "$OutputStylesDir\$OutputStyleName.md") {
-        $backupStyleDir = "$BackupDir\output-styles"
+    $styleFile = Join-Path $OutputStylesDir "$OutputStyleName.md"
+    if (Test-Path $styleFile) {
+        $backupStyleDir = Join-Path $BackupDir "output-styles"
         if (-not (Test-Path $backupStyleDir)) {
             New-Item -ItemType Directory -Path $backupStyleDir -Force | Out-Null
         }
-        Copy-Item "$OutputStylesDir\$OutputStyleName.md" $backupStyleDir
-        "output-styles\$OutputStyleName.md" | Add-Content -Path $ManifestFile
-        Write-Success "  备份 output-styles\$OutputStyleName.md"
+        Copy-Item $styleFile $backupStyleDir
+        "output-styles/$OutputStyleName.md" | Add-Content -Path $ManifestFile
+        Write-Success "  备份 output-styles/$OutputStyleName.md"
     }
 
     # 备份 skills 目录中受影响的文件
@@ -125,14 +126,15 @@ function Backup-Existing {
 
         # 备份每个 skill 目录
         foreach ($skill in $Skills) {
-            if (Test-Path "$SkillsDir\$skill") {
-                $backupSkillDir = "$BackupDir\skills\$skill"
+            $skillPath = Join-Path $SkillsDir $skill
+            if (Test-Path $skillPath) {
+                $backupSkillDir = Join-Path $BackupDir "skills/$skill"
                 if (-not (Test-Path $backupSkillDir)) {
                     New-Item -ItemType Directory -Path $backupSkillDir -Force | Out-Null
                 }
-                Copy-Item -Recurse "$SkillsDir\$skill\*" $backupSkillDir -Force -ErrorAction SilentlyContinue
-                "skills\$skill" | Add-Content -Path $ManifestFile
-                Write-Success "  备份 skills\$skill\"
+                Copy-Item -Recurse "$skillPath/*" $backupSkillDir -Force -ErrorAction SilentlyContinue
+                "skills/$skill" | Add-Content -Path $ManifestFile
+                Write-Success "  备份 skills/$skill/"
             }
         }
     }
@@ -173,7 +175,8 @@ function Install-OutputStyle {
 
     # 下载输出风格文件
     $styleUrl = "$RepoUrl/output-styles/$OutputStyleName.md"
-    Invoke-WebRequest -Uri $styleUrl -OutFile "$OutputStylesDir\$OutputStyleName.md" -UseBasicParsing
+    $styleFile = Join-Path $OutputStylesDir "$OutputStyleName.md"
+    Invoke-WebRequest -Uri $styleUrl -OutFile $styleFile -UseBasicParsing
     Write-Success "输出风格 $OutputStyleName.md 已安装"
 }
 
@@ -212,7 +215,8 @@ function Install-Skills {
 
     # 下载 run_skill.py 入口
     $runSkillUrl = "$RepoUrl/skills/run_skill.py"
-    Invoke-WebRequest -Uri $runSkillUrl -OutFile "$SkillsDir\run_skill.py" -UseBasicParsing
+    $runSkillPath = Join-Path $SkillsDir "run_skill.py"
+    Invoke-WebRequest -Uri $runSkillUrl -OutFile $runSkillPath -UseBasicParsing
     Write-Success "run_skill.py 入口脚本"
 
     # 安装每个 skill
@@ -220,8 +224,8 @@ function Install-Skills {
         Write-Info "  安装 $skill..."
 
         # 创建 skill 目录结构
-        $skillDir = "$SkillsDir\$skill"
-        $scriptsDir = "$skillDir\scripts"
+        $skillDir = Join-Path $SkillsDir $skill
+        $scriptsDir = Join-Path $skillDir "scripts"
 
         if (-not (Test-Path $skillDir)) {
             New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
@@ -232,12 +236,14 @@ function Install-Skills {
 
         # 下载 SKILL.md
         $skillMdUrl = "$RepoUrl/skills/$skill/SKILL.md"
-        Invoke-WebRequest -Uri $skillMdUrl -OutFile "$skillDir\SKILL.md" -UseBasicParsing
+        $skillMdPath = Join-Path $skillDir "SKILL.md"
+        Invoke-WebRequest -Uri $skillMdUrl -OutFile $skillMdPath -UseBasicParsing
 
         # 下载脚本
         $scriptName = $ScriptNames[$skill]
         $scriptUrl = "$RepoUrl/skills/$skill/scripts/$scriptName"
-        Invoke-WebRequest -Uri $scriptUrl -OutFile "$scriptsDir\$scriptName" -UseBasicParsing
+        $scriptPath = Join-Path $scriptsDir $scriptName
+        Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
 
         Write-Success "    $skill ✓"
     }
@@ -268,12 +274,13 @@ function Test-Installation {
     }
 
     # 检查输出风格
-    if (-not (Test-Path "$OutputStylesDir\$OutputStyleName.md")) {
+    $styleFile = Join-Path $OutputStylesDir "$OutputStyleName.md"
+    if (-not (Test-Path $styleFile)) {
         Write-Error "输出风格文件未找到"
         $errors++
     }
     else {
-        Write-Success "output-styles\$OutputStyleName.md ✓"
+        Write-Success "output-styles/$OutputStyleName.md ✓"
     }
 
     # 检查 settings.json 中的 outputStyle
@@ -288,7 +295,8 @@ function Test-Installation {
     }
 
     # 检查 run_skill.py
-    if (-not (Test-Path "$SkillsDir\run_skill.py")) {
+    $runSkillPath = Join-Path $SkillsDir "run_skill.py"
+    if (-not (Test-Path $runSkillPath)) {
         Write-Error "run_skill.py 未找到"
         $errors++
     }
@@ -300,8 +308,9 @@ function Test-Installation {
     $skillCount = 0
     foreach ($skill in $Skills) {
         $scriptName = $ScriptNames[$skill]
-        $skillMdPath = "$SkillsDir\$skill\SKILL.md"
-        $scriptPath = "$SkillsDir\$skill\scripts\$scriptName"
+        $skillDir = Join-Path $SkillsDir $skill
+        $skillMdPath = Join-Path $skillDir "SKILL.md"
+        $scriptPath = Join-Path $skillDir "scripts/$scriptName"
 
         if ((Test-Path $skillMdPath) -and (Test-Path $scriptPath)) {
             $skillCount++
