@@ -33,14 +33,16 @@ ENABLE_OUTPUT_STYLE="false"
 # Skills 列表
 SKILLS=("verify-security" "verify-module" "verify-change" "verify-quality" "gen-docs")
 
-# 脚本名称映射
-declare -A SCRIPT_NAMES=(
-    ["verify-security"]="security_scanner.py"
-    ["verify-module"]="module_scanner.py"
-    ["verify-change"]="change_analyzer.py"
-    ["verify-quality"]="quality_checker.py"
-    ["gen-docs"]="doc_generator.py"
-)
+# 脚本名称映射（使用函数替代关联数组，兼容 Bash 3.x）
+get_script_name() {
+    case "$1" in
+        verify-security) echo "security_scanner.py" ;;
+        verify-module)   echo "module_scanner.py" ;;
+        verify-change)   echo "change_analyzer.py" ;;
+        verify-quality)  echo "quality_checker.py" ;;
+        gen-docs)        echo "doc_generator.py" ;;
+    esac
+}
 
 # 输出风格
 OUTPUT_STYLE_NAME="mechanicus-sage"
@@ -329,7 +331,8 @@ install_skills() {
         download_file "$REPO_URL/skills/$skill/SKILL.md" "$SKILLS_DIR/$skill/SKILL.md"
 
         # 下载脚本
-        local script_name="${SCRIPT_NAMES[$skill]}"
+        local script_name
+        script_name="$(get_script_name "$skill")"
         download_file "$REPO_URL/skills/$skill/scripts/$script_name" "$SKILLS_DIR/$skill/scripts/$script_name"
         chmod +x "$SKILLS_DIR/$skill/scripts/$script_name"
 
@@ -392,7 +395,8 @@ verify_installation() {
     # 检查每个 skill
     local skill_count=0
     for skill in "${SKILLS[@]}"; do
-        local script_name="${SCRIPT_NAMES[$skill]}"
+        local script_name
+        script_name="$(get_script_name "$skill")"
         if [ -f "$SKILLS_DIR/$skill/SKILL.md" ] && [ -f "$SKILLS_DIR/$skill/scripts/$script_name" ]; then
             ((skill_count++))
         else
