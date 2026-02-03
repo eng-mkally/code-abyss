@@ -3,12 +3,11 @@
 # 一键部署「机械神教·铸造贤者」配置
 #
 
-param(
-    [ValidateSet("claude", "codex")]
-    [string]$Target
-)
-
+# 支持 irm | iex 管道执行，不使用 param() 块
 $ErrorActionPreference = "Stop"
+
+# 目标参数（通过环境变量或交互选择）
+$script:Target = $null
 
 # 版本
 $Version = "1.5.0"
@@ -84,7 +83,14 @@ function Assert-Initialized {
 }
 
 function Select-Target {
-    if ($script:Target) { return }
+    if ($script:Target) {
+        # 验证 Target 值
+        if ($script:Target -notin @("claude", "codex")) {
+            Write-Error "无效的 Target: $($script:Target)（仅支持 claude 或 codex）"
+            exit 1
+        }
+        return
+    }
 
     Write-Host ""
     Write-Host "请选择安装目标:" -ForegroundColor Yellow
