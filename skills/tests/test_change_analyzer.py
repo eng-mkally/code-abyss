@@ -16,7 +16,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "verify-change" / "scripts
 from change_analyzer import (
     ChangeType, Severity, FileChange, Issue, AnalysisResult,
     classify_file, identify_affected_modules, check_doc_sync,
-    analyze_impact, analyze_changes, format_report
+    analyze_impact, analyze_changes, format_report,
+    get_working_changes, get_staged_changes, get_git_changes
 )
 
 
@@ -85,6 +86,55 @@ class TestChangeAnalyzer(unittest.TestCase):
 
         self.assertTrue(change.is_test)
 
+    @patch('change_analyzer.subprocess.run')
+    def test_get_working_changes_keeps_dotfile_prefix(self, mock_run):
+        """测试工作区变更保留 dotfile 前缀"""
+        mock_run.return_value = MagicMock(stdout=' M .gitignore\n')
+
+        changes = get_working_changes()
+
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].path, '.gitignore')
+        self.assertEqual(changes[0].change_type, ChangeType.MODIFIED)
+
+    @patch('change_analyzer.subprocess.run')
+    def test_get_staged_changes_parses_status(self, mock_run):
+        """测试暂存区变更解析"""
+        mock_run.return_value = MagicMock(stdout='A\tsrc/new.py\nM\tREADME.md\n')
+
+        changes = get_staged_changes()
+
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(changes[0].change_type, ChangeType.ADDED)
+        self.assertEqual(changes[0].path, 'src/new.py')
+        self.assertEqual(changes[1].change_type, ChangeType.MODIFIED)
+
+    @patch('change_analyzer.subprocess.run')
+    def test_get_git_changes_maps_numstat(self, mock_run):
+        """测试提交变更行数映射"""
+        mock_run.side_effect = [
+            MagicMock(stdout='M\tsrc/main.py\n'),
+            MagicMock(stdout='10\t2\tsrc/main.py\n')
+        ]
+
+        changes = get_git_changes('HEAD~1', 'HEAD')
+
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].path, 'src/main.py')
+        self.assertEqual(changes[0].additions, 10)
+        self.assertEqual(changes[0].deletions, 2)
+
+    @patch('change_analyzer.subprocess.run')
+    def test_get_working_changes_parses_rename(self, mock_run):
+        """测试工作区重命名解析"""
+        mock_run.return_value = MagicMock(stdout='R  old_name.py -> new_name.py\n')
+
+        changes = get_working_changes()
+
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].path, 'new_name.py')
+        self.assertEqual(changes[0].change_type, ChangeType.RENAMED)
+
     def test_identify_affected_modules_single_file(self):
         """测试识别受影响的模块"""
         # 创建模块结构
@@ -119,6 +169,33 @@ class TestChangeAnalyzer(unittest.TestCase):
 
         self.assertIn("module1", modules)
         self.assertIn("module2", modules)
+
+    def test_identify_affected_modules_root_file(self):
+        """测试根目录文件识别为当前模块"""
+        changes = [
+            FileChange(path="main.py", change_type=ChangeType.MODIFIED)
+        ]
+
+        modules = identify_affected_modules(changes)
+
+        self.assertIn(".", modules)
+
+    def test_check_doc_sync_root_module(self):
+        """测试根目录模块文档同步"""
+        changes = [
+            FileChange(
+                path="main.py",
+                change_type=ChangeType.MODIFIED,
+                is_code=True,
+                additions=80,
+                deletions=10
+            )
+        ]
+
+        doc_status, issues = check_doc_sync(changes, {"."})
+
+        self.assertFalse(doc_status.get("./DESIGN.md", True))
+        self.assertTrue(any("DESIGN.md" in i.message for i in issues))
 
     def test_check_doc_sync_no_changes(self):
         """测试无变更时的文档同步检查"""

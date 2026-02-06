@@ -57,6 +57,14 @@ RECOMMENDED_DIRS = {
 
 ALTERNATIVE_SRC_DIRS = ["src", "lib", "pkg", "internal", "cmd", "app"]
 ALTERNATIVE_TEST_DIRS = ["tests", "test", "__tests__", "spec"]
+ROOT_SCRIPT_FILES = {
+    "install.sh",
+    "uninstall.sh",
+    "install.ps1",
+    "uninstall.ps1",
+    "Dockerfile",
+    "Makefile",
+}
 
 
 def scan_module(path: str) -> ScanResult:
@@ -150,11 +158,12 @@ def check_source_dirs(path: Path, result: ScanResult):
             break
 
     # 检查是否有代码文件在根目录
-    code_extensions = {'.py', '.go', '.rs', '.ts', '.js', '.java'}
+    code_extensions = {'.py', '.go', '.rs', '.ts', '.js', '.java', '.sh', '.ps1'}
     root_code_files = [f for f in path.iterdir()
                        if f.is_file() and f.suffix in code_extensions]
+    root_script_files = [f for f in path.iterdir() if f.is_file() and f.name in ROOT_SCRIPT_FILES]
 
-    if root_code_files:
+    if root_code_files or root_script_files:
         found = True
         if len(root_code_files) > 5:
             result.issues.append(Issue(

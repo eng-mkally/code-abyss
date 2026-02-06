@@ -88,6 +88,90 @@ def classify_file(path: str) -> FileChange:
     return change
 
 
+def normalize_path(path: str) -> str:
+    """规范化相对路径"""
+    normalized = path.strip()
+
+    if normalized.startswith('"') and normalized.endswith('"') and len(normalized) >= 2:
+        normalized = normalized[1:-1]
+        normalized = normalized.replace('\\"', '"').replace('\\\\', '\\')
+
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
+
+    return normalized
+
+
+def parse_name_status_line(line: str) -> Optional[FileChange]:
+    """解析 git diff --name-status 输出行"""
+    parts = line.split('\t')
+    if len(parts) < 2:
+        return None
+
+    status_token = parts[0]
+    status = status_token[0]
+    path = normalize_path(parts[-1])
+
+    if not path:
+        return None
+
+    change = classify_file(path)
+
+    if status == 'A':
+        change.change_type = ChangeType.ADDED
+    elif status == 'M':
+        change.change_type = ChangeType.MODIFIED
+    elif status == 'D':
+        change.change_type = ChangeType.DELETED
+    elif status == 'R':
+        change.change_type = ChangeType.RENAMED
+
+    return change
+
+
+def parse_porcelain_line(line: str) -> Optional[FileChange]:
+    """解析 git status --porcelain 输出行"""
+    if len(line) < 3:
+        return None
+
+    status = line[:2]
+    raw_path = line[3:] if len(line) > 3 else ""
+
+    if not raw_path:
+        return None
+
+    if " -> " in raw_path:
+        raw_path = raw_path.split(" -> ", 1)[1]
+
+    path = normalize_path(raw_path)
+    if not path:
+        return None
+
+    change = classify_file(path)
+
+    if '?' in status or 'A' in status:
+        change.change_type = ChangeType.ADDED
+    elif 'R' in status:
+        change.change_type = ChangeType.RENAMED
+    elif 'M' in status:
+        change.change_type = ChangeType.MODIFIED
+    elif 'D' in status:
+        change.change_type = ChangeType.DELETED
+
+    return change
+
+
+def is_path_in_module(file_path: str, module: str) -> bool:
+    """判断文件是否属于模块范围"""
+    normalized_path = normalize_path(file_path)
+
+    if module == ".":
+        return len(Path(normalized_path).parts) == 1
+
+    module_prefix = f"{module}/"
+    return normalized_path == module or normalized_path.startswith(module_prefix)
+
+
 def get_git_changes(base: str = "HEAD~1", target: str = "HEAD") -> List[FileChange]:
     """获取 Git 变更"""
     changes = []
@@ -99,26 +183,13 @@ def get_git_changes(base: str = "HEAD~1", target: str = "HEAD") -> List[FileChan
             capture_output=True, text=True, check=True
         )
 
-        for line in result.stdout.strip().split('\n'):
+        for line in result.stdout.splitlines():
             if not line:
                 continue
 
-            parts = line.split('\t')
-            status = parts[0][0]
-            path = parts[-1]
-
-            change = classify_file(path)
-
-            if status == 'A':
-                change.change_type = ChangeType.ADDED
-            elif status == 'M':
-                change.change_type = ChangeType.MODIFIED
-            elif status == 'D':
-                change.change_type = ChangeType.DELETED
-            elif status == 'R':
-                change.change_type = ChangeType.RENAMED
-
-            changes.append(change)
+            change = parse_name_status_line(line)
+            if change:
+                changes.append(change)
 
         # 获取行数统计
         stat_result = subprocess.run(
@@ -127,14 +198,14 @@ def get_git_changes(base: str = "HEAD~1", target: str = "HEAD") -> List[FileChan
         )
 
         stat_map = {}
-        for line in stat_result.stdout.strip().split('\n'):
+        for line in stat_result.stdout.splitlines():
             if not line:
                 continue
             parts = line.split('\t')
             if len(parts) >= 3:
                 adds = int(parts[0]) if parts[0] != '-' else 0
                 dels = int(parts[1]) if parts[1] != '-' else 0
-                stat_map[parts[2]] = (adds, dels)
+                stat_map[normalize_path(parts[2])] = (adds, dels)
 
         for change in changes:
             if change.path in stat_map:
@@ -158,24 +229,13 @@ def get_staged_changes() -> List[FileChange]:
             capture_output=True, text=True, check=True
         )
 
-        for line in result.stdout.strip().split('\n'):
+        for line in result.stdout.splitlines():
             if not line:
                 continue
 
-            parts = line.split('\t')
-            status = parts[0][0]
-            path = parts[-1]
-
-            change = classify_file(path)
-
-            if status == 'A':
-                change.change_type = ChangeType.ADDED
-            elif status == 'M':
-                change.change_type = ChangeType.MODIFIED
-            elif status == 'D':
-                change.change_type = ChangeType.DELETED
-
-            changes.append(change)
+            change = parse_name_status_line(line)
+            if change:
+                changes.append(change)
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
@@ -193,23 +253,13 @@ def get_working_changes() -> List[FileChange]:
             capture_output=True, text=True, check=True
         )
 
-        for line in result.stdout.strip().split('\n'):
+        for line in result.stdout.splitlines():
             if not line:
                 continue
 
-            status = line[:2]
-            path = line[3:]
-
-            change = classify_file(path)
-
-            if 'A' in status or '?' in status:
-                change.change_type = ChangeType.ADDED
-            elif 'M' in status:
-                change.change_type = ChangeType.MODIFIED
-            elif 'D' in status:
-                change.change_type = ChangeType.DELETED
-
-            changes.append(change)
+            change = parse_porcelain_line(line)
+            if change:
+                changes.append(change)
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
@@ -222,7 +272,12 @@ def identify_affected_modules(changes: List[FileChange]) -> Set[str]:
     modules = set()
 
     for change in changes:
-        parts = Path(change.path).parts
+        normalized_path = normalize_path(change.path)
+        parts = Path(normalized_path).parts
+
+        if len(parts) == 1:
+            modules.add(".")
+            continue
 
         # 查找模块边界（包含 README.md 或 DESIGN.md 的目录）
         for i in range(len(parts)):
@@ -244,21 +299,21 @@ def check_doc_sync(changes: List[FileChange], modules: Set[str]) -> tuple[Dict[s
     issues = []
 
     code_changes = [c for c in changes if c.is_code and c.change_type != ChangeType.DELETED]
-    doc_changes = {c.path for c in changes if c.is_doc}
+    doc_changes = {normalize_path(c.path) for c in changes if c.is_doc}
 
     # 检查每个模块
     for module in modules:
         module_path = Path(module)
-        readme = module_path / "README.md"
-        design = module_path / "DESIGN.md"
+        readme = normalize_path(str(module_path / "README.md"))
+        design = normalize_path(str(module_path / "DESIGN.md"))
 
         # 检查模块内是否有代码变更
-        module_code_changes = [c for c in code_changes if c.path.startswith(module)]
+        module_code_changes = [c for c in code_changes if is_path_in_module(c.path, module)]
 
         if module_code_changes:
             # 检查是否有对应的文档更新
-            readme_updated = str(readme) in doc_changes
-            design_updated = str(design) in doc_changes
+            readme_updated = readme in doc_changes
+            design_updated = design in doc_changes
 
             # 计算变更规模
             total_changes = sum(c.additions + c.deletions for c in module_code_changes)

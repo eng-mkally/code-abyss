@@ -44,6 +44,38 @@ Claude Sage 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 
 |------|------|------|
 | 无自动更新机制 | 复杂度控制 | 视需求添加 |
 
+## 安全与可靠性修复（v1.5.0）
+
+### 1. Git porcelain 解析修复（verify-change）
+
+- 问题：`get_working_changes()` 对 `git status --porcelain` 使用 `strip()`，会吞掉前导空格，导致 `.gitignore` 被错误解析为 `gitignore`。
+- 决策：新增统一解析/归一化函数（`parse_porcelain_line`、`parse_name_status_line`、`normalize_path`），禁止在解析前对整段输出做 `strip()`。
+- 取舍：增加少量函数复杂度，换取 dotfile、rename、相对路径等场景的稳定性与可测性。
+
+### 2. 安全扫描降噪（verify-security）
+
+- 问题：SQL/PathTraversal/SSRF 规则过宽，产生大量误报；`DEBUG_CODE` 把正常 CLI `print()` 误判为调试代码。
+- 决策：收紧规则到“危险调用 + 动态外部输入”语义；`DEBUG_CODE` 移除 `print`，保留 `pdb.set_trace` / `breakpoint` / `debugger` / `console.log`。
+- 取舍：减少泛化检测覆盖，换取更高 precision，避免 critical/high 噪声淹没有效告警。
+
+### 3. 模块识别增强（verify-module）
+
+- 问题：脚本型项目（`install.sh` / `install.ps1`）会被误判“未找到源码目录”。
+- 决策：源码识别扩展到 `.sh/.ps1` 与常见根目录脚本名（`install.sh`、`uninstall.sh` 等）。
+- 取舍：规则更贴近本仓库形态，减少对脚本项目的不必要警告。
+
+### 4. 命名规则框架豁免（verify-quality）
+
+- 问题：`unittest` 生命周期方法和 AST Visitor 方法被误判 snake_case。
+- 决策：对 `setUp/tearDown/...` 与 `visit_*` 增加白名单豁免。
+- 取舍：轻微放宽规范，换取与 Python 生态约定兼容。
+
+### 5. 安装供应链风险缓解（install 脚本）
+
+- 问题：默认从 `main` 拉取远程脚本，存在漂移与供应链风险。
+- 决策：默认固定下载 ref（`v1.5.0`），并提供可显式覆盖机制（`install.sh --ref`、PowerShell `SAGE_REF`）。
+- 取舍：默认更安全稳定，但灵活升级需显式指定 ref。
+
 ## 变更历史
 
 | 版本 | 日期 | 变更内容 |
@@ -51,3 +83,4 @@ Claude Sage 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 
 | v1.3.0 | 2026-02-02 | 初始版本（Claude Code CLI 安装/卸载 + Skills） |
 | v1.4.0 | 2026-02-02 | 单脚本支持 Codex CLI（`--target codex` 安装到 `~/.codex/`） |
 | v1.5.0 | 2026-02-02 | 安全修复 + 单元测试 + 文档生成器改进 |
+| v1.5.0-p1 | 2026-02-06 | verify-change 解析修复、扫描规则降噪、模块识别增强、安装 ref 固定 |

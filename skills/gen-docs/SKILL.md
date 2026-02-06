@@ -1,19 +1,22 @@
 ---
 name: gen-docs
-description: 文档生成器。自动分析模块结构，生成 README.md 和 DESIGN.md 骨架。当用户提到生成文档、创建README、创建DESIGN、文档骨架、文档模板时使用。在新建模块开始时自动触发。
+description: 文档生成器。自动分析模块结构，生成 README.md 和 DESIGN.md 骨架。当魔尊提到生成文档、创建README、创建DESIGN、文档骨架、文档模板时使用。在新建模块开始时自动触发。
 user-invocable: true
 disable-model-invocation: false
-allowed-tools: Bash, Read, Write
+allowed-tools: Bash, Read, Write, Glob
 argument-hint: <模块路径> [--force]
 ---
 
-# 文档生成器
+# 📝 文档生成器
+
+> 无文档不成模块，文档是模块的身份证。
 
 ## 核心原则
 
 ```
 无文档不成模块
 文档是模块的身份证
+没有身份证的模块不允许上线
 ```
 
 ## 自动生成
@@ -76,6 +79,13 @@ python scripts/doc_generator.py <模块路径> --json   # JSON 输出
 - 依赖列表
 - 入口点文件
 
+## 自动触发时机
+
+| 场景 | 触发条件 |
+|------|----------|
+| 新建模块 | 模块创建开始时 |
+| 缺失文档 | 检测到模块缺少文档时 |
+
 ## 使用流程
 
 ```
@@ -86,6 +96,24 @@ python scripts/doc_generator.py <模块路径> --json   # JSON 输出
 5. 运行 /verify-module 校验完整性
 ```
 
+## 生成后检查清单
+
+### README.md
+
+- [ ] 填充模块描述
+- [ ] 补充特性列表
+- [ ] 添加使用示例
+- [ ] 确认依赖完整
+
+### DESIGN.md
+
+- [ ] 明确设计目标
+- [ ] 记录设计决策
+- [ ] 说明技术选型理由
+- [ ] 列出已知限制
+
 ---
 
-**文档是模块的身份证，没有身份证的模块不允许上线。**
+**道训**：文档是模块的身份证，没有身份证的模块不允许上线。
+
+`📝 文档生成已备，身份证明方可立足。`

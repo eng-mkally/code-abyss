@@ -75,6 +75,7 @@ MAX_COMPLEXITY = 10
 MAX_PARAMETERS = 5
 MIN_FUNCTION_NAME_LENGTH = 2
 MAX_FUNCTION_NAME_LENGTH = 40
+PYTHON_SPECIAL_METHODS = {"setUp", "tearDown", "setUpClass", "tearDownClass", "setUpModule", "tearDownModule"}
 
 
 class PythonAnalyzer(ast.NodeVisitor):
@@ -176,7 +177,7 @@ class PythonAnalyzer(ast.NodeVisitor):
             ))
 
         # 检查函数命名
-        if not node.name.startswith('_'):
+        if not node.name.startswith('_') and node.name not in PYTHON_SPECIAL_METHODS and not node.name.startswith('visit_'):
             if not re.match(r'^[a-z][a-z0-9_]*$', node.name):
                 self.issues.append(Issue(
                     severity=Severity.INFO,

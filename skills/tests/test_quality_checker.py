@@ -360,6 +360,36 @@ class MyClass:
 
         self.assertTrue(any(i.severity == Severity.ERROR for i in issues))
 
+    def test_python_analyzer_unittest_setup_teardown_naming(self):
+        """测试 unittest 生命周期函数不应命名告警"""
+        source = '''
+class DemoTest:
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+'''
+
+        analyzer = PythonAnalyzer("test.py", source)
+        issues, functions, classes, complexity = analyzer.analyze()
+
+        self.assertFalse(any("setUp" in i.message for i in issues))
+        self.assertFalse(any("tearDown" in i.message for i in issues))
+
+    def test_python_analyzer_ast_visitor_naming(self):
+        """测试 AST visitor 方法不应命名告警"""
+        source = '''
+class MyVisitor:
+    def visit_FunctionDef(self, node):
+        return node
+'''
+
+        analyzer = PythonAnalyzer("visitor.py", source)
+        issues, functions, classes, complexity = analyzer.analyze()
+
+        self.assertFalse(any("visit_FunctionDef" in i.message for i in issues))
+
 
 class TestQualityCheckerEdgeCases(unittest.TestCase):
     """代码质量检查器边界条件测试"""

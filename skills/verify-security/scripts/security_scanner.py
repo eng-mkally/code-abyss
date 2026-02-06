@@ -54,10 +54,10 @@ class ScanResult:
 SECURITY_RULES = [
     # SQL 注入
     {
-        "id": "SQL_INJECTION",
+        "id": "SQL_INJECTION_DYNAMIC",
         "category": "注入",
         "severity": Severity.CRITICAL,
-        "pattern": r'(execute|query|raw)\s*\(\s*[f"\'].*\{.*\}|%s.*%|\'.*\+.*\'',
+        "pattern": r'\b(execute|query|raw)\s*\(\s*(f["\']|["\'][^"\'\n]*["\']\s*\+\s*|["\'][^"\'\n]*["\']\s*%\s*[^,\)]|["\'][^"\'\n]*["\']\.format\s*\()',
         "extensions": [".py", ".js", ".ts", ".go", ".java", ".php"],
         "message": "可能存在 SQL 注入风险",
         "recommendation": "使用参数化查询或 ORM"
@@ -171,7 +171,7 @@ SECURITY_RULES = [
         "id": "PATH_TRAVERSAL",
         "category": "路径遍历",
         "severity": Severity.HIGH,
-        "pattern": r'(open|read|write|Path)\s*\([^)]*\+[^)]*\)|os\.path\.join\s*\([^)]*request',
+        "pattern": r'(open|read|write|Path|os\.path\.join)\s*\([^\n]*(request|input|argv|args|params|query|form|path_param)\b',
         "extensions": [".py"],
         "message": "可能存在路径遍历风险",
         "recommendation": "验证并规范化用户输入的路径"
@@ -181,7 +181,7 @@ SECURITY_RULES = [
         "id": "SSRF",
         "category": "SSRF",
         "severity": Severity.HIGH,
-        "pattern": r'requests\.(get|post|put|delete|head)\s*\([^)]*\+|urllib\.request\.urlopen\s*\([^)]*\+',
+        "pattern": r'(requests\.(get|post|put|delete|head)|urllib\.request\.urlopen)\s*\([^\n]*(request|input|argv|args|params|query|url)\b',
         "extensions": [".py"],
         "message": "可能存在 SSRF 风险",
         "recommendation": "验证并限制目标 URL"
@@ -191,7 +191,7 @@ SECURITY_RULES = [
         "id": "DEBUG_CODE",
         "category": "调试",
         "severity": Severity.LOW,
-        "pattern": r'\b(console\.log|print|debugger|pdb\.set_trace|breakpoint)\s*\(',
+        "pattern": r'\b(console\.log|debugger|pdb\.set_trace|breakpoint)\s*\(',
         "extensions": [".py", ".js", ".ts"],
         "message": "发现调试代码",
         "recommendation": "生产环境移除调试代码"
@@ -241,7 +241,7 @@ def scan_file(file_path: Path, rules: List[Dict]) -> List[Finding]:
         for line_num, line in enumerate(lines, 1):
             # 跳过注释行
             stripped = line.strip()
-            if stripped.startswith('#') or stripped.startswith('//') or stripped.startswith('*'):
+            if stripped.startswith('#') or stripped.startswith('//') or stripped.startswith('*') or stripped.startswith('/*'):
                 continue
 
             if pattern.search(line):
@@ -264,7 +264,7 @@ def scan_directory(path: str, exclude_dirs: List[str] = None) -> ScanResult:
     result = ScanResult(scan_path=str(scan_path))
 
     if exclude_dirs is None:
-        exclude_dirs = ['.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.tox']
+        exclude_dirs = ['.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.tox', 'tests', 'test', '__tests__', 'spec']
 
     code_extensions = {'.py', '.js', '.ts', '.jsx', '.tsx', '.go', '.java', '.php', '.rb', '.yaml', '.yml', '.json'}
 
@@ -335,7 +335,7 @@ def main():
 
     args = parser.parse_args()
 
-    exclude_dirs = ['.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build'] + args.exclude
+    exclude_dirs = ['.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', 'tests', 'test', '__tests__', 'spec'] + args.exclude
     result = scan_directory(args.path, exclude_dirs)
 
     if args.json:

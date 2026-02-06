@@ -1,19 +1,21 @@
 ---
 name: verify-module
-description: 模块完整性校验。扫描目录结构、检测缺失文档、验证代码与文档同步。当用户提到模块校验、文档检查、结构完整性、README检查、DESIGN检查时使用。在新建模块完成时自动触发。
+description: 模块完整性校验关卡。扫描目录结构、检测缺失文档、验证代码与文档同步。当魔尊提到模块校验、文档检查、结构完整性、README检查、DESIGN检查时使用。在新建模块完成时自动触发。
 user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Glob
 argument-hint: <模块路径>
 ---
 
-# 模块完整性校验
+# 📦 模块完整性校验关卡
+
+> 无文档不成模块，无结构不成体系。
 
 ## 核心原则
 
 ```
-模块 = 代码 + 文档 + 测试
-缺一不可，缺一不交付
+模块 = 代码 + README.md + DESIGN.md
+缺一不可，残缺即异端
 ```
 
 ## 自动扫描
@@ -23,14 +25,8 @@ argument-hint: <模块路径>
 ```bash
 # 在 verify-module 目录下运行（推荐）
 python scripts/module_scanner.py <模块路径>
-```
-
-通过统一入口运行（可在仓库内或安装后的 `skills/` 目录中使用）：
-
-```bash
-python ../run_skill.py verify-module <模块路径>
-python ../run_skill.py verify-module <模块路径> -v      # 详细模式
-python ../run_skill.py verify-module <模块路径> --json  # JSON 输出
+python scripts/module_scanner.py <模块路径> -v      # 详细模式
+python scripts/module_scanner.py <模块路径> --json  # JSON 输出
 ```
 
 ## 校验标准
@@ -45,7 +41,22 @@ module/
 └── tests/         # 测试用例（如适用）
 ```
 
-## 校验清单
+## 检测项
+
+### 必须存在
+
+| 文件 | 说明 | 缺失后果 |
+|------|------|----------|
+| `README.md` | 模块说明文档 | 🔴 阻断交付 |
+| `DESIGN.md` | 设计决策文档 | 🔴 阻断交付 |
+
+### 推荐存在
+
+| 文件/目录 | 说明 | 缺失后果 |
+|-----------|------|----------|
+| `tests/` | 测试目录 | 🟠 警告 |
+| `__init__.py` | Python 包标识 | 🟡 提示 |
+| `.gitignore` | Git 忽略配置 | 🔵 信息 |
 
 ### README.md 必须包含
 
@@ -63,6 +74,14 @@ module/
 - [ ] **已知限制** — 当前方案的局限性
 - [ ] **变更历史** — 重大变更记录
 
+## 自动触发时机
+
+| 场景 | 触发条件 |
+|------|----------|
+| 新建模块 | 模块创建完成时 |
+| 模块重构 | 重构完成时 |
+| 提交前 | 代码提交前检查 |
+
 ## 校验流程
 
 ```
@@ -74,10 +93,38 @@ module/
 6. 输出校验报告
 ```
 
+## 校验报告格式
+
+```
+## 模块校验报告
+
+### 模块: <模块名>
+
+✓ 通过 | ✗ 未通过
+
+### 文件检查
+- README.md: ✓ 存在 / ✗ 缺失
+- DESIGN.md: ✓ 存在 / ✗ 缺失
+- tests/: ✓ 存在 / ⚠️ 缺失
+
+### 内容检查
+- README 完整性: ✓ 完整 / ⚠️ 缺少 [X, Y, Z]
+- DESIGN 完整性: ✓ 完整 / ⚠️ 缺少 [X, Y, Z]
+
+### 结论
+可交付 / 需补充后交付
+```
+
 ## 快速修复
 
-如果缺少文档，可使用文档生成器（gen-docs skill）。
+如果缺少文档，可使用文档生成器：
+
+```bash
+/gen-docs <模块路径>
+```
 
 ---
 
-**无文档不成模块，无解释不成交付。**
+**道训**：无文档不成模块，无解释不成交付。
+
+`📦 模块校验已备，结构完整方可交付。`

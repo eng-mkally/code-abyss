@@ -137,6 +137,26 @@ class TestModuleScanner(unittest.TestCase):
         # 应该没有关于缺少源码的警告
         self.assertTrue(not any("未找到源码目录" in i.message for i in result.issues))
 
+    def test_scan_module_with_root_shell_script_files(self):
+        """测试根目录 shell 脚本识别为源码"""
+        (self.temp_path / "README.md").write_text("# Test")
+        (self.temp_path / "DESIGN.md").write_text("# Design")
+        (self.temp_path / "install.sh").write_text("#!/usr/bin/env bash\necho ok")
+
+        result = scan_module(str(self.temp_path))
+
+        self.assertTrue(not any("未找到源码目录" in i.message for i in result.issues))
+
+    def test_scan_module_with_root_powershell_script_files(self):
+        """测试根目录 PowerShell 脚本识别为源码"""
+        (self.temp_path / "README.md").write_text("# Test")
+        (self.temp_path / "DESIGN.md").write_text("# Design")
+        (self.temp_path / "install.ps1").write_text("Write-Host 'ok'")
+
+        result = scan_module(str(self.temp_path))
+
+        self.assertTrue(not any("未找到源码目录" in i.message for i in result.issues))
+
     def test_scan_module_too_many_root_files(self):
         """测试根目录文件过多"""
         (self.temp_path / "README.md").write_text("# Test")

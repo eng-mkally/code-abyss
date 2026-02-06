@@ -8,6 +8,7 @@ set -e
 
 # 版本
 VERSION="1.5.0"
+VERSION_PIN="v1.5.0"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -18,7 +19,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # 配置
-REPO_URL="https://raw.githubusercontent.com/telagod/claude-sage/main"
+REPO_URL="https://raw.githubusercontent.com/telagod/claude-sage/$VERSION_PIN"
 TARGET=""
 TARGET_DIR=""
 BACKUP_DIR=""
@@ -68,11 +69,12 @@ tty_read() {
 usage() {
     cat <<EOF
 用法:
-  ./install.sh [--target claude|codex]
+  ./install.sh [--target claude|codex] [--ref <git-ref>]
 
 说明:
   --target claude  安装到 ~/.claude/（Claude Code CLI）
   --target codex   安装到 ~/.codex/（Codex CLI，安装 AGENTS.md + skills）
+  --ref <git-ref>  指定下载分支/标签/commit，默认 $VERSION_PIN
 
 EOF
 }
@@ -477,6 +479,24 @@ main() {
                 ;;
             --target=*)
                 TARGET="${1#*=}"
+                shift 1
+                ;;
+            --ref)
+                local ref="${2:-}"
+                if [ -z "$ref" ]; then
+                    log_error "--ref 需要参数"
+                    exit 1
+                fi
+                REPO_URL="https://raw.githubusercontent.com/telagod/claude-sage/$ref"
+                shift 2
+                ;;
+            --ref=*)
+                local ref="${1#*=}"
+                if [ -z "$ref" ]; then
+                    log_error "--ref 需要参数"
+                    exit 1
+                fi
+                REPO_URL="https://raw.githubusercontent.com/telagod/claude-sage/$ref"
                 shift 1
                 ;;
             -h|--help)

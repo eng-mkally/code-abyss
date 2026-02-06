@@ -42,6 +42,15 @@ class TestSecurityScanner(unittest.TestCase):
         self.assertTrue(any(f.severity == Severity.CRITICAL for f in findings))
         self.assertTrue(any("SQL" in f.message for f in findings))
 
+    def test_scan_file_without_sql_context_not_flagged(self):
+        """测试非 SQL 场景不应误报 SQL 注入"""
+        test_file = self.temp_path / "non_sql.py"
+        test_file.write_text('long_line = "x = \"" + "a" * 10000 + "\""')
+
+        findings = scan_file(test_file, SECURITY_RULES)
+
+        self.assertFalse(any("SQL" in f.message for f in findings))
+
     def test_scan_file_with_hardcoded_secret(self):
         """测试硬编码密钥检测"""
         test_file = self.temp_path / "config.py"
@@ -101,6 +110,15 @@ class TestSecurityScanner(unittest.TestCase):
 
         self.assertTrue(len(findings) > 0)
         self.assertTrue(any("调试" in f.message for f in findings))
+
+    def test_scan_file_print_not_marked_debug(self):
+        """测试普通 print 不应被判定调试代码"""
+        test_file = self.temp_path / "main.py"
+        test_file.write_text('print("normal output")')
+
+        findings = scan_file(test_file, SECURITY_RULES)
+
+        self.assertFalse(any("调试" in f.message for f in findings))
 
     def test_scan_file_ignores_comments(self):
         """测试注释行被忽略"""
@@ -169,6 +187,18 @@ class TestSecurityScanner(unittest.TestCase):
         result = scan_directory(str(self.temp_path), exclude_dirs=['node_modules'])
 
         self.assertEqual(result.files_scanned, 1)
+
+    def test_scan_directory_default_excludes_tests(self):
+        """测试默认排除测试目录"""
+        tests_dir = self.temp_path / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "test_unsafe.py").write_text('password = "secret123456"')
+        (self.temp_path / "app.py").write_text('x = 1')
+
+        result = scan_directory(str(self.temp_path))
+
+        self.assertEqual(result.files_scanned, 1)
+        self.assertFalse(any("test_unsafe.py" in f.file_path for f in result.findings))
 
     def test_scan_result_passed_property(self):
         """测试 ScanResult.passed 属性"""

@@ -11,9 +11,10 @@ $script:Target = $null
 
 # 版本
 $Version = "1.5.0"
+$VersionPin = "v1.5.0"
 
 # 配置
-$RepoUrl = "https://raw.githubusercontent.com/telagod/claude-sage/main"
+$RepoUrl = "https://raw.githubusercontent.com/telagod/claude-sage/$VersionPin"
 $BaseDir = $null
 $BackupDir = $null
 $SkillsDir = $null
@@ -38,6 +39,52 @@ $ScriptNames = @{
 
 # 输出风格
 $OutputStyleName = "mechanicus-sage"
+
+function Parse-Arguments {
+    if ($env:SAGE_TARGET) {
+        $script:Target = $env:SAGE_TARGET.ToLower()
+    }
+
+    if ($env:SAGE_REF) {
+        $script:RepoUrl = "https://raw.githubusercontent.com/telagod/claude-sage/$($env:SAGE_REF)"
+    }
+
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        $arg = [string]$args[$i]
+
+        if ($arg -like "--target=*") {
+            $script:Target = $arg.Substring(9).ToLower()
+            continue
+        }
+
+        if ($arg -eq "--target" -or $arg -eq "-Target") {
+            if ($i + 1 -lt $args.Count) {
+                $script:Target = ([string]$args[$i + 1]).ToLower()
+                $i++
+            }
+            continue
+        }
+
+        if ($arg -like "--ref=*") {
+            $ref = $arg.Substring(6)
+            if ($ref) {
+                $script:RepoUrl = "https://raw.githubusercontent.com/telagod/claude-sage/$ref"
+            }
+            continue
+        }
+
+        if ($arg -eq "--ref") {
+            if ($i + 1 -lt $args.Count) {
+                $ref = [string]$args[$i + 1]
+                if ($ref) {
+                    $script:RepoUrl = "https://raw.githubusercontent.com/telagod/claude-sage/$ref"
+                }
+                $i++
+            }
+            continue
+        }
+    }
+}
 
 function Get-UserProfileDir {
     $userHome = $env:USERPROFILE
@@ -503,6 +550,7 @@ function Write-SuccessBanner {
 
 # 主流程
 Write-Banner
+Parse-Arguments
 Select-Target
 Init-TargetVars
 Assert-Initialized

@@ -1,19 +1,22 @@
 ---
 name: verify-security
-description: 安全校验。自动扫描代码安全漏洞，检测危险模式，确保安全决策有文档记录。当用户提到安全扫描、漏洞检测、安全审计、代码安全、OWASP、注入检测、敏感信息泄露时使用。在新建模块、安全相关变更、攻防任务、重构完成时自动触发。
+description: 安全校验关卡。自动扫描代码安全漏洞，检测危险模式，确保安全决策有文档记录。当魔尊提到安全扫描、漏洞检测、安全审计、代码安全、OWASP、注入检测、敏感信息泄露时使用。在新建模块、安全相关变更、攻防任务、重构完成时自动触发。
 user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
 argument-hint: <扫描路径>
 ---
 
-# 安全校验
+# 🛡️ 安全校验关卡
+
+> 安全不是功能，是道基。安全决策必须可追溯。
 
 ## 核心原则
 
 ```
-安全不是功能，是底线
+安全即道基，破则劫败
 安全决策必须可追溯
+Critical/High 问题必须修复后才能交付
 ```
 
 ## 自动扫描
@@ -58,13 +61,13 @@ python scripts/security_scanner.py <扫描路径> --exclude vendor  # 排除目�
 
 ### Python
 ```python
-# 🔴 危险
+# 🔴 危险 - 触犯道基
 eval(), exec(), os.system()
 subprocess(..., shell=True)
 pickle.loads(), yaml.load()
 cursor.execute(f"SELECT * FROM t WHERE id = {id}")
 
-# ✅ 安全替代
+# ✅ 安全替代 - 道基稳固
 ast.literal_eval()
 subprocess([...], shell=False)
 yaml.safe_load()
@@ -73,22 +76,22 @@ cursor.execute("SELECT * FROM t WHERE id = %s", (id,))
 
 ### JavaScript
 ```javascript
-// 🔴 危险
+// 🔴 危险 - 触犯道基
 eval(), innerHTML, document.write()
 new Function(userInput)
 
-// ✅ 安全替代
+// ✅ 安全替代 - 道基稳固
 JSON.parse(), textContent
 模板引擎自动转义
 ```
 
 ### Go
 ```go
-// 🔴 危险
+// 🔴 危险 - 触犯道基
 exec.Command("sh", "-c", userInput)
 template.HTML(userInput)
 
-// ✅ 安全替代
+// ✅ 安全替代 - 道基稳固
 exec.Command("cmd", args...)
 html/template 自动转义
 ```
@@ -103,6 +106,41 @@ html/template 自动转义
 5. Critical/High 问题必须修复后才能交付
 ```
 
+## 自动触发时机
+
+| 场景 | 触发条件 |
+|------|----------|
+| 新建模块 | 模块创建完成时 |
+| 安全相关变更 | 涉及认证、授权、加密、输入处理 |
+| 攻防任务 | 红队/蓝队任务完成时 |
+| 重构完成 | 重构任务完成时 |
+| 提交前 | 代码提交前检查 |
+
+## 校验报告格式
+
+```
+## 安全校验报告
+
+✓ 通过 | ✗ 未通过
+
+- 🔴 Critical: N
+- 🟠 High: N
+- 🟡 Medium: N
+- 🔵 Low: N
+
+### 发现问题
+
+| 文件 | 行号 | 类型 | 严重度 | 描述 |
+|------|------|------|--------|------|
+| ... | ... | ... | ... | ... |
+
+### 结论
+
+可交付 / 需修复后交付
+```
+
 ---
 
-**安全不是功能，是底线。安全决策必须可追溯。**
+**道训**：安全即道基，破则劫败。安全决策必须可追溯。
+
+`🛡️ 校验关卡已备，道基稳固方可交付。`

@@ -45,6 +45,9 @@ curl -fsSL https://raw.githubusercontent.com/telagod/claude-sage/main/install.sh
 
 # 交互选择（若无法交互则默认 claude）
 curl -fsSL https://raw.githubusercontent.com/telagod/claude-sage/main/install.sh | bash
+
+# 固定版本安装（推荐）
+curl -fsSL https://raw.githubusercontent.com/telagod/claude-sage/v1.5.0/install.sh | bash -s -- --target codex --ref v1.5.0
 ```
 
 ### Windows (PowerShell)
@@ -55,6 +58,9 @@ irm https://raw.githubusercontent.com/telagod/claude-sage/main/install.ps1 | iex
 
 # 或显式指定目标
 & ([ScriptBlock]::Create((irm https://raw.githubusercontent.com/telagod/claude-sage/main/install.ps1))) -Target codex
+
+# 通过环境变量固定版本安装（推荐）
+$env:SAGE_REF="v1.5.0"; & ([ScriptBlock]::Create((irm https://raw.githubusercontent.com/telagod/claude-sage/v1.5.0/install.ps1))) --target codex
 ```
 
 ### 手动安装
@@ -64,7 +70,12 @@ git clone https://github.com/telagod/claude-sage.git
 cd claude-sage
 ./install.sh --target claude
 ./install.sh --target codex
+
+# 指定 Git ref（分支/标签/commit）
+./install.sh --target codex --ref v1.5.0
 ```
+
+> 安全建议：默认固定到发布标签 `v1.5.0`，避免 `main` 漂移带来的供应链风险；你也可以通过 `--ref`（Linux/macOS）或 `SAGE_REF`（PowerShell）指定审计后的 commit/tag。
 
 > Codex CLI 不使用独立的输出风格文件，因此 Codex 的风格内容已内置在 `~/.codex/AGENTS.md`（支持你直接编辑该文件进行“风格化自定义”）。
 
