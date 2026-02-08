@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const VERSION = '1.6.1';
+const VERSION = '1.6.2';
 const HOME = os.homedir();
 const SKIP = ['__pycache__', '.pyc', '.pyo', '.egg-info', '.DS_Store', 'Thumbs.db', '.git'];
 const PKG_ROOT = path.join(__dirname, '..');
@@ -370,9 +370,8 @@ async function installCcline(ctx) {
     ok('ccline/config.toml (已存在)');
   }
 
-  const log = [];
-  deepMergeNew(ctx.settings, CCLINE_STATUS_LINE, '', log);
-  printMergeLog(log);
+  ctx.settings.statusLine = CCLINE_STATUS_LINE.statusLine;
+  ok(`statusLine → ${c.cyn(CCLINE_STATUS_LINE.statusLine.command)}`);
   fs.writeFileSync(ctx.settingsPath, JSON.stringify(ctx.settings, null, 2) + '\n');
 
   console.log('');
