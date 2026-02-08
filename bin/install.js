@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const VERSION = '1.6.3';
+const VERSION = require(path.join(__dirname, '..', 'package.json')).version;
 const HOME = os.homedir();
 const SKIP = ['__pycache__', '.pyc', '.pyo', '.egg-info', '.DS_Store', 'Thumbs.db', '.git'];
 const PKG_ROOT = path.join(__dirname, '..');
@@ -118,7 +118,7 @@ function detectClaudeAuth(settings) {
     try {
       const cc = JSON.parse(fs.readFileSync(cred, 'utf8'));
       if (cc.claudeAiOauth || cc.apiKey) return { type: 'login', detail: 'claude login' };
-    } catch (e) {}
+    } catch (e) { warn(`凭证文件损坏: ${cred}`); }
   }
   return null;
 }
@@ -130,7 +130,7 @@ function detectCodexAuth() {
     try {
       const a = JSON.parse(fs.readFileSync(auth, 'utf8'));
       if (a.token || a.api_key) return { type: 'login', detail: 'codex login' };
-    } catch (e) {}
+    } catch (e) { warn(`凭证文件损坏: ${auth}`); }
   }
   const cfg = path.join(HOME, '.codex', 'config.toml');
   if (fs.existsSync(cfg)) {
@@ -263,7 +263,7 @@ function installCore(tgt) {
   const settingsPath = path.join(targetDir, 'settings.json');
   let settings = {};
   if (fs.existsSync(settingsPath)) {
-    try { settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) { settings = {}; }
+    try { settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) { warn(`settings.json 解析失败，将使用空配置`); settings = {}; }
     fs.copyFileSync(settingsPath, path.join(backupDir, 'settings.json'));
     manifest.backups.push('settings.json');
   }

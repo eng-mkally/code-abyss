@@ -136,7 +136,7 @@ def analyze_module(path: Path) -> ModuleInfo:
     return info
 
 
-def generate_readme(info: ModuleInfo, existing_content: str = None) -> str:
+def generate_readme(info: ModuleInfo) -> str:
     """生成 README.md"""
     lines = []
 
@@ -313,7 +313,7 @@ console.log(result);''',
     return "\n".join(lines)
 
 
-def generate_design(info: ModuleInfo, existing_content: str = None) -> str:
+def generate_design(info: ModuleInfo) -> str:
     """生成 DESIGN.md"""
     lines = []
     today = datetime.now().strftime("%Y-%m-%d")
@@ -441,7 +441,7 @@ def generate_docs(path: str, force: bool = False) -> Dict[str, str]:
         result["messages"].append("README.md 已存在，跳过（使用 --force 覆盖）")
     else:
         existing = readme_path.read_text() if readme_path.exists() else None
-        content = generate_readme(info, existing)
+        content = generate_readme(info)
         readme_path.write_text(content)
         result["readme"] = str(readme_path)
         result["messages"].append(f"已生成 README.md")
@@ -452,7 +452,7 @@ def generate_docs(path: str, force: bool = False) -> Dict[str, str]:
         result["messages"].append("DESIGN.md 已存在，跳过（使用 --force 覆盖）")
     else:
         existing = design_path.read_text() if design_path.exists() else None
-        content = generate_design(info, existing)
+        content = generate_design(info)
         design_path.write_text(content)
         result["design"] = str(design_path)
         result["messages"].append(f"已生成 DESIGN.md")

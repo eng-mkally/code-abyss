@@ -97,3 +97,6 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 | v1.4.0 | 2026-02-02 | 单脚本支持 Codex CLI（`--target codex` 安装到 `~/.codex/`） |
 | v1.5.0 | 2026-02-02 | 安全修复 + 单元测试 + 文档生成器改进 |
 | v1.5.0-p1 | 2026-02-06 | verify-change 解析修复、扫描规则降噪、模块识别增强、安装 ref 固定 |
+| v1.6.1 | 2026-02-07 | 交互升级 @inquirer/prompts — 方向键/空格选择 |
+| v1.6.2 | 2026-02-07 | ccline statusLine 强制覆盖旧配置 |
+| v1.6.3 | 2026-02-08 | Windows 兼容 — ccline 路径检测 + statusLine 命令；Codex config 废弃字段修复；审查问题批量修复 |

@@ -11,7 +11,7 @@ import json
 import ast
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 from enum import Enum
 from collections import defaultdict
 
@@ -90,7 +90,7 @@ class PythonAnalyzer(ast.NodeVisitor):
         self.classes: List[Dict] = []
         self.complexity = 0
 
-    def analyze(self) -> tuple[List[Issue], List[Dict], List[Dict], int]:
+    def analyze(self) -> Tuple[List[Issue], List[Dict], List[Dict], int]:
         try:
             tree = ast.parse(self.source)
             self.visit(tree)
@@ -222,7 +222,7 @@ class PythonAnalyzer(ast.NodeVisitor):
         return complexity
 
 
-def analyze_python_file(file_path: Path) -> tuple[FileMetrics, List[Issue]]:
+def analyze_python_file(file_path: Path) -> Tuple[FileMetrics, List[Issue]]:
     """分析 Python 文件"""
     metrics = FileMetrics(path=str(file_path))
     issues = []
@@ -296,7 +296,7 @@ def analyze_python_file(file_path: Path) -> tuple[FileMetrics, List[Issue]]:
     return metrics, issues
 
 
-def analyze_generic_file(file_path: Path) -> tuple[FileMetrics, List[Issue]]:
+def analyze_generic_file(file_path: Path) -> Tuple[FileMetrics, List[Issue]]:
     """分析通用代码文件"""
     metrics = FileMetrics(path=str(file_path))
     issues = []

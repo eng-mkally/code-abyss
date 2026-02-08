@@ -12,7 +12,13 @@ if (!fs.existsSync(manifestPath)) {
   process.exit(1);
 }
 
-const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+let manifest;
+try {
+  manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+} catch (e) {
+  console.error('❌ manifest.json 解析失败:', e.message);
+  process.exit(1);
+}
 
 console.log(`\n🗑️  卸载 Code Abyss v${manifest.version}...\n`);
 

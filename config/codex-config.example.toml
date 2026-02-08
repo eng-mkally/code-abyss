@@ -16,8 +16,7 @@ base_url = "https://your-api-endpoint.com/v1"
 wire_api = "responses"
 requires_openai_auth = true
 
-[tools]
-web_search = true
+web_search = "live"
 
 [features]
 unified_exec = true
