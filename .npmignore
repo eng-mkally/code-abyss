@@ -4,3 +4,6 @@
 .npmignore
 DESIGN.md
 TEST_REPORT.md
+__pycache__/
+**/__pycache__/
+*.pyc
