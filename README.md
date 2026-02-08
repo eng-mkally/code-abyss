@@ -40,6 +40,7 @@ npx code-abyss
 npx code-abyss --target claude    # 安装到 ~/.claude/
 npx code-abyss --target codex     # 安装到 ~/.codex/
 npx code-abyss --target claude -y  # 零配置一键安装 (自动合并推荐配置)
+npx code-abyss --target codex -y   # 零配置一键安装 (自动写入 config.toml 模板)
 npx code-abyss --uninstall claude  # 卸载 Claude Code
 npx code-abyss --uninstall codex   # 卸载 Codex CLI
 ```
