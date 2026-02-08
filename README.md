@@ -20,18 +20,16 @@
 npx code-abyss
 ```
 
-交互式菜单：
+交互式菜单（方向键选择，回车确认）：
 
 ```
-☠️ Code Abyss v1.6.0
+☠️ Code Abyss v1.6.1
 
-请选择操作:
-  1) 安装到 Claude Code (~/.claude/)
-  2) 安装到 Codex CLI (~/.codex/)
-  3) 卸载 Claude Code
-  4) 卸载 Codex CLI
-
-选择 [1/2/3/4]:
+? 请选择操作 (Use arrow keys)
+❯ 安装到 Claude Code (~/.claude/)
+  安装到 Codex CLI   (~/.codex/)
+  卸载 Claude Code
+  卸载 Codex CLI
 ```
 
 也可以直接指定：
@@ -61,17 +59,12 @@ npx code-abyss --uninstall codex   # 卸载 Codex CLI
 
 未检测到认证时会提示配置，可交互输入或跳过。
 
-然后进入可选配置：
+然后进入可选配置（空格选择，回车确认）：
 
 ```
-✅ 核心文件安装完成
-
-可选配置:
-  [1] 写入推荐 settings.json (精细合并，保留现有配置)
-  [2] 安装 ccline 状态栏 (需要 Nerd Font 字体)
-  [3] 全部跳过
-
-选择 (多选用逗号分隔，如 1,2) [3]:
+? 选择要安装的配置 (Press <space> to select, <enter> to submit)
+◉ 精细合并推荐 settings.json (保留现有配置)
+◯ 安装 ccline 状态栏 (需要 Nerd Font)
 ```
 
 - **settings.json 精细合并**：逐项合并推荐配置，已有的 key 不覆盖，缺失的 key 补上

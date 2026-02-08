@@ -1,6 +1,6 @@
 {
   "name": "code-abyss",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "邪修红尘仙·宿命深渊 - 一键为 Claude Code / Codex CLI 注入邪修人格与安全工程知识体系",
   "keywords": [
     "claude",
@@ -37,5 +37,8 @@
   },
   "scripts": {
     "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.2.0"
   }
 }
