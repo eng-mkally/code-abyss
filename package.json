@@ -15,14 +15,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/telagod/code-abyss.git"
+    "url": "git+https://github.com/telagod/code-abyss.git"
   },
   "homepage": "https://github.com/telagod/code-abyss#readme",
   "bugs": {
     "url": "https://github.com/telagod/code-abyss/issues"
   },
   "bin": {
-    "code-abyss": "./bin/install.js"
+    "code-abyss": "bin/install.js"
   },
   "files": [
     "bin/",
