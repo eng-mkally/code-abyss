@@ -316,6 +316,7 @@ async function postClaude(ctx) {
     printMergeLog(log);
     fs.writeFileSync(ctx.settingsPath, JSON.stringify(ctx.settings, null, 2) + '\n');
     ok('settings.json 合并完成');
+    await installCcline(ctx);
     return;
   }
 
@@ -323,7 +324,7 @@ async function postClaude(ctx) {
     message: '选择要安装的配置 (空格选择, 回车确认)',
     choices: [
       { name: '精细合并推荐 settings.json (保留现有配置)', value: 'settings', checked: true },
-      { name: '安装 ccline 状态栏 (需要 Nerd Font)', value: 'ccline' },
+      { name: '安装 ccline 状态栏 (需要 Nerd Font)', value: 'ccline', checked: true },
     ],
   });
 
@@ -343,45 +344,64 @@ async function installCcline(ctx) {
   console.log('');
   info('安装 ccline 状态栏...');
   const { execSync } = require('child_process');
+  const cclineDir = path.join(HOME, '.claude', 'ccline');
+  const cclineBin = path.join(cclineDir, process.platform === 'win32' ? 'ccline.exe' : 'ccline');
 
-  let installed = false;
-  try { execSync('ccline --version', { stdio: 'pipe' }); installed = true; } catch (e) {}
-  if (!installed) {
-    const cclineBin = path.join(HOME, '.claude', 'ccline', 'ccline');
-    if (fs.existsSync(cclineBin)) installed = true;
+  // 1. 检测是否已有二进制
+  let hasBin = fs.existsSync(cclineBin);
+  if (!hasBin) {
+    try { execSync('ccline --version', { stdio: 'pipe' }); hasBin = true; } catch (e) {}
   }
 
-  if (!installed) {
+  // 2. 未安装则通过 npm 安装（postinstall 自动下载原生二进制）
+  if (!hasBin) {
     info('ccline 未检测到，正在安装...');
     try {
       execSync('npm install -g @cometix/ccline', { stdio: 'inherit' });
-      installed = true;
-      ok('ccline 安装成功');
+      hasBin = fs.existsSync(cclineBin);
+      if (hasBin) ok('ccline 二进制安装成功');
+      else {
+        try { execSync('ccline --version', { stdio: 'pipe' }); hasBin = true; ok('ccline 安装成功 (全局)'); } catch (e) {}
+      }
     } catch (e) {
       warn('npm install -g @cometix/ccline 失败');
-      info(`手动: ${c.cyn('https://github.com/Haleclipse/CCometixLine/releases')}`);
+      info(`手动安装: ${c.cyn('npm install -g @cometix/ccline')}`);
+      info(`或下载: ${c.cyn('https://github.com/Haleclipse/CCometixLine/releases')}`);
     }
   } else {
-    ok('ccline 已安装');
+    ok('ccline 二进制已存在');
   }
 
-  const cclineConfig = path.join(HOME, '.claude', 'ccline', 'config.toml');
-  if (installed && !fs.existsSync(cclineConfig)) {
-    try { execSync('ccline --init', { stdio: 'inherit' }); ok('ccline 默认配置已生成'); }
-    catch (e) { warn('ccline --init 失败，可手动运行'); }
-  } else if (fs.existsSync(cclineConfig)) {
-    ok('ccline/config.toml (已存在)');
+  // 3. 部署打包的 config.toml（覆盖默认配置）
+  const bundledConfig = path.join(PKG_ROOT, 'config', 'ccline', 'config.toml');
+  const targetConfig = path.join(cclineDir, 'config.toml');
+  if (fs.existsSync(bundledConfig)) {
+    fs.mkdirSync(cclineDir, { recursive: true });
+    if (fs.existsSync(targetConfig)) {
+      info(`备份: ${c.d('ccline/config.toml')}`);
+      const backupDir = path.join(HOME, '.claude', '.sage-backup');
+      fs.mkdirSync(backupDir, { recursive: true });
+      fs.copyFileSync(targetConfig, path.join(backupDir, 'ccline-config.toml'));
+    }
+    fs.copyFileSync(bundledConfig, targetConfig);
+    ok('ccline/config.toml 已部署 (Code Abyss 定制版)');
+  } else {
+    // 无打包配置，回退到 ccline --init
+    if (hasBin && !fs.existsSync(targetConfig)) {
+      try { execSync('ccline --init', { stdio: 'inherit' }); ok('ccline 默认配置已生成'); }
+      catch (e) { warn('ccline --init 失败，可手动运行'); }
+    }
   }
 
+  // 4. 合并 statusLine 到 settings.json
   ctx.settings.statusLine = CCLINE_STATUS_LINE.statusLine;
   ok(`statusLine → ${c.cyn(CCLINE_STATUS_LINE.statusLine.command)}`);
   fs.writeFileSync(ctx.settingsPath, JSON.stringify(ctx.settings, null, 2) + '\n');
 
   console.log('');
-  warn(`需要 ${c.b('Nerd Font')} 字体`);
+  warn(`需要 ${c.b('Nerd Font')} 字体才能正确显示图标`);
   info(`推荐: FiraCode Nerd Font / JetBrainsMono Nerd Font`);
   info(`下载: ${c.cyn('https://www.nerdfonts.com/')}`);
-  info(`配置: ${c.cyn('ccline --config')}`);
   ok('ccline 配置完成');
 }
 
